@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MesaJa - Menu Promocional</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <header class="global-header">
+        <div class="social-links">
+            <a href="#" title="Youtube"><img src="/static/icones/youtube.png" alt="YouTube"></a>
+            <a href="#" title="Facebook"><img src="/static/icones/facebook.png" alt="Facebook"></a>
+            <a href="#" title="Twitter"><img src="/static/icones/twitter.png" alt="Twitter"></a>
+            <a href="#" title="Instagram"><img src="/static/icones/instagram.png" alt="Instagram"></a>
+        </div>
+        <nav class="nav-links">
+            <a href="#">Recursos</a> <a href="#">Testes</a> <a href="#">Promoções</a> <a href="#">Tutorial</a> <a href="#">Fale Conosco</a>
+        </nav>
+    </header>
+
+    <main class="promocoes-container">
+        <h1>Menu Promocional</h1>
+
+        <div class="add-mesa-container">
+            <button id="show-form-btn" class="btn-primary">Criar Nova Promoção</button>
+            
+            <form id="promocao-form" style="display: none;">
+                <h3 id="form-title">Nova Promoção</h3>
+                <input type="hidden" id="promocao-id">
+                <div class="form-group">
+                    <label for="nome">Nome da Promoção</label>
+                    <input type="text" id="nome" required>
+                </div>
+                <div class="form-group">
+                    <label for="descricao">Descrição</label>
+                    <input type="text" id="descricao" required>
+                </div>
+                <div class="form-group">
+                    <label for="regras">Regras (opcional)</label>
+                    <input type="text" id="regras">
+                </div>
+                <div class="form-group">
+                    <label for="status">Status</label>
+                    <select id="status" class="status-select">
+                        <option value="ativa">Ativa</option>
+                        <option value="inativa">Inativa</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Salvar</button>
+                    <button type="button" id="cancel-btn" class="btn-secondary">Cancelar</button>
+                </div>
+            </form>
+        </div>
+
+        <table class="garcons-table"> <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Descrição</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="promocoes-tbody">
+                </tbody>
+        </table>
+
+    </main>
+    
+    <script>
+        // --- Variáveis Globais ---
+        const tbodyEl = document.getElementById('promocoes-tbody');
+        const formEl = document.getElementById('promocao-form');
+        const showFormBtnEl = document.getElementById('show-form-btn');
+        const cancelBtnEl = document.getElementById('cancel-btn');
+        const formTitleEl = document.getElementById('form-title');
+        const promocaoIdInput = document.getElementById('promocao-id');
+        const nomeInput = document.getElementById('nome');
+        const descricaoInput = document.getElementById('descricao');
+        const regrasInput = document.getElementById('regras');
+        const statusInput = document.getElementById('status');
+
+        // --- Funções UI ---
+        function showForm(mode = 'add', promocao = null) {
+            formEl.style.display = 'flex';
+            showFormBtnEl.style.display = 'none';
+            if (mode === 'edit') {
+                formTitleEl.textContent = 'Editar Promoção';
+                promocaoIdInput.value = promocao.id;
+                nomeInput.value = promocao.nome;
+                descricaoInput.value = promocao.descricao;
+                regrasInput.value = promocao.regras || '';
+                statusInput.value = promocao.status;
+            } else {
+                formTitleEl.textContent = 'Nova Promoção';
+                formEl.reset();
+                promocaoIdInput.value = '';
+                statusInput.value = 'ativa';
+            }
+        }
+
+        function hideForm() {
+            formEl.style.display = 'none';
+            showFormBtnEl.style.display = 'block';
+            formEl.reset();
+        }
+
+        // --- Event Listeners ---
+        showFormBtnEl.addEventListener('click', () => showForm('add'));
+        cancelBtnEl.addEventListener('click', hideForm);
+
+        formEl.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const id = promocaoIdInput.value;
+            const url = id ? `/promocoes/${id}` : '/promocoes/';
+            const method = id ? 'PUT' : 'POST';
+
+            const body = {
+                nome: nomeInput.value,
+                descricao: descricaoInput.value,
+                regras: regrasInput.value || null,
+                status: statusInput.value
+            };
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                if (!response.ok) throw new Error('Falha ao salvar promoção.');
+                hideForm();
+                await carregarPromocoes();
+            } catch (error) {
+                console.error("Erro ao salvar promoção:", error);
+                alert("Não foi possível salvar a promoção.");
+            }
+        });
+
+        // --- Funções da API ---
+        async function deletarPromocao(id, nome) {
+            if (confirm(`Tem certeza que deseja deletar a promoção "${nome}"?`)) {
+                try {
+                    const response = await fetch(`/promocoes/${id}`, { method: 'DELETE' });
+                    if (!response.ok) throw new Error('Falha ao deletar promoção.');
+                    await carregarPromocoes();
+                } catch (error) {
+                    console.error("Erro ao deletar promoção:", error);
+                    alert("Não foi possível deletar a promoção.");
+                }
+            }
+        }
+
+        async function carregarPromocoes() {
+            tbodyEl.innerHTML = '<tr><td colspan="4">Carregando...</td></tr>';
+            try {
+                const response = await fetch('/promocoes/');
+                if (!response.ok) throw new Error('Falha ao buscar promoções.');
+                const promocoes = await response.json();
+
+                tbodyEl.innerHTML = '';
+                if (promocoes.length === 0) {
+                    tbodyEl.innerHTML = '<tr><td colspan="4">Nenhuma promoção cadastrada.</td></tr>';
+                    return;
+                }
+
+                promocoes.forEach(promocao => {
+                    const tr = document.createElement('tr');
+                    const statusText = promocao.status.charAt(0).toUpperCase() + promocao.status.slice(1);
+                    
+                    tr.innerHTML = `
+                        <td>${promocao.nome}</td>
+                        <td>${promocao.descricao}</td>
+                        <td>${statusText}</td>
+                        <td class="actions-cell">
+                            <button class="action-btn-small btn-edit">Editar</button>
+                            <button class="action-btn-small btn-deletar">Deletar</button>
+                        </td>
+                    `;
+                    tr.querySelector('.btn-edit').addEventListener('click', () => showForm('edit', promocao));
+                    tr.querySelector('.btn-deletar').addEventListener('click', () => deletarPromocao(promocao.id, promocao.nome));
+                    tbodyEl.appendChild(tr);
+                });
+            } catch (error) {
+                console.error("Erro ao carregar promoções:", error);
+                tbodyEl.innerHTML = '<tr><td colspan="4" style="color: red;">Não foi possível carregar as promoções.</td></tr>';
+            }
+        }
+
+        // --- Inicialização ---
+        document.addEventListener('DOMContentLoaded', () => {
+            carregarPromocoes();
+        });
+    </script>
+</body>
+</html>

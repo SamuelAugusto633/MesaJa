@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MesaJa - Menu de Garçons</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <header class="global-header">
+        <div class="social-links">
+            <a href="#" title="Youtube"><img src="/static/icones/youtube.png" alt="YouTube"></a>
+            <a href="#" title="Facebook"><img src="/static/icones/facebook.png" alt="Facebook"></a>
+            <a href="#" title="Twitter"><img src="/static/icones/twitter.png" alt="Twitter"></a>
+            <a href="#" title="Instagram"><img src="/static/icones/instagram.png" alt="Instagram"></a>
+        </div>
+        <nav class="nav-links">
+            <a href="#">Recursos</a> <a href="#">Testes</a> <a href="#">Promoções</a> <a href="#">Tutorial</a> <a href="#">Fale Conosco</a>
+        </nav>
+    </header>
+
+    <main class="garcons-container">
+        <h1>Comunicação com a Equipa</h1>
+
+        <div class="garcons-page-layout">
+            <aside class="garcons-list-panel">
+                <div class="garcons-list-header">
+                    <h3>Garçons</h3>
+                    <button id="add-garcon-btn" class="btn-primary" style="padding: 5px 10px; font-size: 14px; margin-top: 0;">Adicionar Novo</button>
+                </div>
+                <div id="garcons-list"></div>
+            </aside>
+
+            <section id="chat-panel" class="chat-panel" style="display: none;">
+                <div id="chat-header" class="chat-header"></div>
+                <div id="chat-messages" class="chat-messages"></div>
+                <form id="chat-input-form" class="chat-input-form">
+                    <input type="text" id="message-text" placeholder="Escreva uma mensagem..." autocomplete="off" required>
+                    <button type="submit" class="btn-primary">Enviar</button>
+                </form>
+            </section>
+            
+            <section id="chat-welcome-message" class="chat-panel">
+                 <h2>Selecione um garçom para iniciar a conversa.</h2>
+                 <p>Use os ícones na lista para editar, deletar ou conversar.</p>
+            </section>
+        </div>
+    </main>
+
+    <div id="garcon-modal" class="modal-overlay">
+        <div class="modal-content">
+            <form id="garcon-form">
+                <h3 id="form-title">Novo Garçom</h3>
+                <input type="hidden" id="garcon-id">
+                <div class="form-group">
+                    <label for="nome">Nome do Garçom</label>
+                    <input type="text" id="nome" required>
+                </div>
+                <div class="form-group">
+                    <label for="telegram_id">ID do Telegram (opcional)</label>
+                    <input type="text" id="telegram_id">
+                </div>
+                <div class="form-group">
+                    <label for="status">Status</label>
+                    <select id="status" class="status-select">
+                        <option value="ativo">Trabalhando</option>
+                        <option value="folga">Folga</option>
+                        <option value="férias">Férias</option>
+                        <option value="desativado">Desativado</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Salvar</button>
+                    <button type="button" id="cancel-btn" class="btn-secondary">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // --- Variáveis Globais ---
+        const garconsListEl = document.getElementById('garcons-list');
+        const chatPanelEl = document.getElementById('chat-panel');
+        const chatWelcomeEl = document.getElementById('chat-welcome-message');
+        const chatHeaderEl = document.getElementById('chat-header');
+        const chatMessagesEl = document.getElementById('chat-messages');
+        const chatFormEl = document.getElementById('chat-input-form');
+        const messageTextEl = document.getElementById('message-text');
+        
+        const modalEl = document.getElementById('garcon-modal');
+        const formEl = document.getElementById('garcon-form');
+        const addGarconBtn = document.getElementById('add-garcon-btn');
+        const cancelBtnEl = document.getElementById('cancel-btn');
+        const formTitleEl = document.getElementById('form-title');
+        const garconIdInput = document.getElementById('garcon-id');
+        const nomeInput = document.getElementById('nome');
+        const telegramIdInput = document.getElementById('telegram_id');
+        const statusInput = document.getElementById('status');
+
+        let garconSelecionadoId = null;
+        let messageCheckInterval = null;
+        let knownMessageCount = 0;
+        const notificationSound = new Audio('/static/sons/notificacao.mp3');
+
+        // --- Funções UI ---
+        function showForm(mode = 'add', garcon = null) {
+            modalEl.classList.add('visible');
+            if (mode === 'edit') {
+                formTitleEl.textContent = 'Editar Garçom';
+                garconIdInput.value = garcon.id;
+                nomeInput.value = garcon.nome;
+                telegramIdInput.value = garcon.telegram_id || '';
+                statusInput.value = garcon.status;
+            } else {
+                formTitleEl.textContent = 'Novo Garçom';
+                formEl.reset();
+                garconIdInput.value = '';
+                statusInput.value = 'ativo';
+            }
+        }
+
+        function hideForm() {
+            modalEl.classList.remove('visible');
+            formEl.reset();
+        }
+
+        // --- Lógica Principal ---
+        async function carregarGarcons() {
+            try {
+                const response = await fetch('/garcons/');
+                if (!response.ok) throw new Error('Falha ao buscar garçons.');
+                const garcons = await response.json();
+                
+                garconsListEl.innerHTML = '';
+                if (garcons.length === 0) {
+                    garconsListEl.innerHTML = '<p style="padding: 15px;">Nenhum garçom cadastrado.</p>';
+                    return;
+                }
+
+                garcons.forEach(garcon => {
+                    const item = document.createElement('div');
+                    item.className = 'garcon-item';
+                    item.dataset.id = garcon.id;
+                    if(garcon.id === garconSelecionadoId) item.classList.add('selected');
+                    
+                    let statusText = garcon.status === 'ativo' ? 'Trabalhando' : garcon.status.charAt(0).toUpperCase() + garcon.status.slice(1);
+
+                    item.innerHTML = `
+                        <div class="garcon-item-info">
+                            <div>
+                                <span class="status-dot ${garcon.status}"></span>
+                                <strong>${garcon.nome}</strong>
+                            </div>
+                            <span>ID Telegram: ${garcon.telegram_id || 'N/A'}</span>
+                        </div>
+                        <div class="garcon-item-actions">
+                            <button title="Editar Garçom" class="btn-edit">✏️</button>
+                            <button title="Deletar Garçom" class="btn-deletar">🗑️</button>
+                        </div>
+                    `;
+                    item.querySelector('.garcon-item-info').addEventListener('click', () => selecionarGarcon(garcon));
+                    item.querySelector('.btn-edit').addEventListener('click', () => showForm('edit', garcon));
+                    item.querySelector('.btn-deletar').addEventListener('click', () => deletarGarcon(garcon.id, garcon.nome));
+                    garconsListEl.appendChild(item);
+                });
+            } catch (error) { console.error("Erro ao carregar garçons:", error); }
+        }
+
+        function selecionarGarcon(garcon) {
+            if (messageCheckInterval) clearInterval(messageCheckInterval);
+
+            garconSelecionadoId = garcon.id;
+            
+            document.querySelectorAll('.garcon-item').forEach(el => el.classList.remove('selected'));
+            document.querySelector(`.garcon-item[data-id='${garcon.id}']`).classList.add('selected');
+
+            chatWelcomeEl.style.display = 'none';
+            chatPanelEl.style.display = 'flex';
+            chatHeaderEl.textContent = `Conversa com ${garcon.nome}`;
+            
+            knownMessageCount = 0;
+            carregarMensagens(garcon.id, true);
+            messageCheckInterval = setInterval(() => carregarMensagens(garcon.id, false), 3000);
+        }
+
+        async function carregarMensagens(garconId, primeiraCarga = false) {
+            try {
+                const response = await fetch(`/mensagens/${garconId}`);
+                if (!response.ok) {
+                    if (messageCheckInterval) clearInterval(messageCheckInterval);
+                    return;
+                }
+                const mensagens = await response.json();
+                
+                if (!primeiraCarga && mensagens.length > knownMessageCount) {
+                    const ultimaMensagem = mensagens[mensagens.length - 1];
+                    if (ultimaMensagem.direcao === 'recebida') {
+                        notificationSound.play();
+                    }
+                }
+                knownMessageCount = mensagens.length;
+
+                chatMessagesEl.innerHTML = '';
+                if (mensagens.length === 0) {
+                    chatMessagesEl.innerHTML = '<p style="text-align: center; color: #6c757d;">Nenhuma mensagem nesta conversa ainda.</p>';
+                    return;
+                }
+
+                mensagens.forEach(msg => {
+                    const bubble = document.createElement('div');
+                    bubble.className = `chat-bubble ${msg.direcao}`;
+                    bubble.textContent = msg.texto;
+                    chatMessagesEl.appendChild(bubble);
+                });
+                
+                if (primeiraCarga || mensagens.length > knownMessageCount) {
+                    chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+                }
+            } catch (error) { 
+                console.error("Erro ao carregar mensagens:", error);
+                if (messageCheckInterval) clearInterval(messageCheckInterval);
+            }
+        }
+        
+        async function deletarGarcon(id, nome) {
+            if (confirm(`Tem certeza que deseja deletar o garçom ${nome}?`)) {
+                try {
+                    const response = await fetch(`/garcons/${id}`, { method: 'DELETE' });
+                    if (!response.ok) throw new Error('Falha ao deletar garçom.');
+                    if(garconSelecionadoId === id) {
+                        if (messageCheckInterval) clearInterval(messageCheckInterval);
+                        chatPanelEl.style.display = 'none';
+                        chatWelcomeEl.style.display = 'flex';
+                        garconSelecionadoId = null;
+                    }
+                    await carregarGarcons();
+                } catch (error) { alert("Não foi possível deletar o garçom."); }
+            }
+        }
+        
+        // --- Event Listeners ---
+        addGarconBtn.addEventListener('click', () => showForm('add'));
+        cancelBtnEl.addEventListener('click', hideForm);
+
+        formEl.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const id = garconIdInput.value;
+            const url = id ? `/garcons/${id}` : '/garcons/';
+            const method = id ? 'PUT' : 'POST';
+            const body = {
+                nome: nomeInput.value,
+                telegram_id: telegramIdInput.value || null,
+                status: statusInput.value
+            };
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                if (!response.ok) throw new Error('Falha ao salvar garçom.');
+                hideForm();
+                await carregarGarcons();
+            } catch (error) { alert("Não foi possível salvar o garçom."); }
+        });
+
+        chatFormEl.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const texto = messageTextEl.value.trim();
+            if (!texto || !garconSelecionadoId) return;
+            try {
+                const response = await fetch(`/garcons/${garconSelecionadoId}/enviar-mensagem`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ texto: texto })
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || "Falha ao enviar mensagem.");
+                }
+                messageTextEl.value = '';
+                await carregarMensagens(garconSelecionadoId, true);
+            } catch (error) { alert(error.message); }
+        });
+
+        // --- Inicialização ---
+        document.addEventListener('DOMContentLoaded', carregarGarcons);
+    </script>
+</body>
+</html>

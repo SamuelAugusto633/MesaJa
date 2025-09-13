@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MesaJa - Status das Mesas</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <header class="global-header">
+        <div class="social-links">
+            <a href="#" title="Youtube"><img src="/static/icones/youtube.png" alt="YouTube"></a>
+            <a href="#" title="Facebook"><img src="/static/icones/facebook.png" alt="Facebook"></a>
+            <a href="#" title="Twitter"><img src="/static/icones/twitter.png" alt="Twitter"></a>
+            <a href="#" title="Instagram"><img src="/static/icones/instagram.png" alt="Instagram"></a>
+        </div>
+        <nav class="nav-links">
+            <a href="#">Recursos</a> <a href="#">Testes</a> <a href="#">Promoções</a> <a href="#">Tutorial</a> <a href="#">Fale Conosco</a>
+        </nav>
+    </header>
+
+    <main class="mesas-container">
+        <h1>Gerenciamento de Mesas</h1>
+        
+        <div class="add-mesa-container">
+            <button id="show-form-btn" class="btn-primary">Adicionar Nova Mesa</button>
+            <form id="add-mesa-form">
+                <h3>Nova Mesa</h3>
+                <div class="form-group">
+                    <label for="numero">Número da Mesa</label>
+                    <input type="number" id="numero" required>
+                </div>
+                <div class="form-group">
+                    <label for="capacidade">Capacidade</label>
+                    <input type="number" id="capacidade" required>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Salvar Mesa</button>
+                    <button type="button" id="cancel-btn" class="btn-secondary">Cancelar</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="mesas-grid" class="mesas-grid">
+            </div>
+    </main>
+
+    <script>
+        const gridEl = document.getElementById('mesas-grid');
+        const formEl = document.getElementById('add-mesa-form');
+        const showFormBtnEl = document.getElementById('show-form-btn');
+        const cancelBtnEl = document.getElementById('cancel-btn');
+
+        showFormBtnEl.addEventListener('click', () => { formEl.classList.add('visible'); showFormBtnEl.style.display = 'none'; });
+        cancelBtnEl.addEventListener('click', () => { formEl.classList.remove('visible'); showFormBtnEl.style.display = 'block'; formEl.reset(); });
+        formEl.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const numero = document.getElementById('numero').value;
+            const capacidade = document.getElementById('capacidade').value;
+            try {
+                const response = await fetch('/mesas/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ numero: parseInt(numero), capacidade: parseInt(capacidade), status: 'disponivel' })
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    alert(errorData.detail || 'Ocorreu um erro ao criar a mesa.');
+                    return;
+                }
+                cancelBtnEl.click();
+                await carregarMesas();
+            } catch (error) {
+                console.error("Erro:", error);
+                alert("Erro de rede.");
+            }
+        });
+
+        async function mudarStatus(mesaId, novoStatus) {
+            try {
+                const response = await fetch(`/mesas/${mesaId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: novoStatus })
+                });
+                if (!response.ok) throw new Error('Falha ao atualizar.');
+                await carregarMesas();
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Não foi possível alterar o status.');
+            }
+        }
+        async function deletarMesa(mesaId, mesaNumero) {
+            const confirmacao = confirm(`Você tem certeza que deseja deletar a Mesa ${mesaNumero} permanentemente? Esta ação não pode ser desfeita.`);
+            if (confirmacao) {
+                try {
+                    const response = await fetch(`/mesas/${mesaId}`, { method: 'DELETE' });
+                    if (!response.ok) throw new Error('Falha ao deletar a mesa.');
+                    await carregarMesas();
+                } catch (error) {
+                    console.error('Erro ao deletar mesa:', error);
+                    alert('Não foi possível deletar a mesa.');
+                }
+            }
+        }
+        async function atribuirCliente(mesaId) {
+            try {
+                const response = await fetch(`/mesas/${mesaId}/atribuir-proximo`, {
+                    method: 'POST',
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    alert(errorData.detail || "Não foi possível atribuir o cliente.");
+                    return;
+                }
+                await carregarMesas();
+            } catch (error) {
+                console.error('Erro ao atribuir cliente:', error);
+                alert('Ocorreu um erro de rede.');
+            }
+        }
+        async function carregarMesas() {
+            gridEl.innerHTML = '<p>Carregando mesas...</p>';
+            try {
+                const response = await fetch('/mesas/');
+                if (!response.ok) throw new Error('Erro de rede');
+                const mesas = await response.json();
+                gridEl.innerHTML = '';
+                if (mesas.length === 0) {
+                    gridEl.innerHTML = '<p>Nenhuma mesa cadastrada.</p>';
+                    return;
+                }
+                mesas.sort((a, b) => a.numero - b.numero);
+                mesas.forEach(mesa => {
+                    const statusClass = `status-${mesa.status.toLowerCase()}`;
+                    const mesaCard = document.createElement('div');
+                    mesaCard.className = `mesa-card ${statusClass}`;
+                    
+                    let actionButtons = '';
+                    let clienteInfo = '';
+                    if (mesa.status === 'disponivel') {
+                        actionButtons = `<button class="action-btn btn-atribuir" onclick="atribuirCliente(${mesa.id})">Atribuir Cliente</button>
+                                       <button class="action-btn btn-reservar" onclick="mudarStatus(${mesa.id}, 'reservada')">Reservar</button>`;
+                    } else if (mesa.status === 'ocupada') {
+                        if (mesa.cliente_atual) {
+                            clienteInfo = `<p class="mesa-cliente">Cliente: ${mesa.cliente_atual}</p>`;
+                        }
+                        actionButtons = `<button class="action-btn btn-sujar" onclick="mudarStatus(${mesa.id}, 'suja')">Marcar Suja</button>`;
+                    } else if (mesa.status === 'suja' || mesa.status === 'reservada') {
+                        actionButtons = `<button class="action-btn btn-liberar" onclick="mudarStatus(${mesa.id}, 'disponivel')">Liberar</button>`;
+                    }
+                    mesaCard.innerHTML = `
+                        <h2>Mesa ${mesa.numero}</h2>
+                        <p>Capacidade: ${mesa.capacidade} pessoas</p>
+                        ${clienteInfo}
+                        <div class="mesa-status"><span>${mesa.status}</span></div>
+                        <div class="mesa-actions">
+                            ${actionButtons}
+                            <button class="action-btn btn-deletar" onclick="deletarMesa(${mesa.id}, ${mesa.numero})">Deletar</button>
+                        </div>
+                    `;
+                    gridEl.appendChild(mesaCard);
+                });
+            } catch (error) {
+                gridEl.innerHTML = '<p style="color: red;">Não foi possível carregar as mesas.</p>';
+                console.error('Erro:', error);
+            }
+        }
+
+        window.onload = carregarMesas;
+    </script>
+</body>
+</html>

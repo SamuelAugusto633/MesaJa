@@ -1,0 +1,20 @@
+# Ignorar o arquivo de variáveis de ambiente
+.env
+
+# Ignorar ambiente virtual (caso esteja dentro do back/)
+venv/
+.venv/
+
+# Cache do Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Logs e arquivos temporários
+*.log
+*.sqlite3
+
+# Configurações de IDE/Editor
+.vscode/
+.idea/

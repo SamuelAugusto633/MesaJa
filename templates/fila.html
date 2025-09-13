@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MesaJa - Fila de Espera</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <header class="global-header">
+        <div class="social-links">
+            <a href="#" title="Youtube"><img src="/static/icones/youtube.png" alt="YouTube"></a>
+            <a href="#" title="Facebook"><img src="/static/icones/facebook.png" alt="Facebook"></a>
+            <a href="#" title="Twitter"><img src="/static/icones/twitter.png" alt="Twitter"></a>
+            <a href="#" title="Instagram"><img src="/static/icones/instagram.png" alt="Instagram"></a>
+        </div>
+        <nav class="nav-links">
+            <a href="#">Recursos</a> <a href="#">Testes</a> <a href="#">Promoções</a> <a href="#">Tutorial</a> <a href="#">Fale Conosco</a>
+        </nav>
+    </header>
+
+    <main class="fila-container">
+        <h1>Fila de Espera Atual</h1>
+        <div class="fila-actions">
+             <button class="action-btn btn-atribuir" onclick="atenderProximo()">Atender Próximo da Fila</button>
+        </div>
+        <div id="fila-lista">
+            </div>
+
+        <div class="test-form-container">
+            <h3>Adicionar Cliente (para Testes)</h3>
+            <form id="fila-test-form">
+                <div class="form-group">
+                    <label for="test-nome">Nome do Grupo</label>
+                    <input type="text" id="test-nome" required>
+                </div>
+                <div class="form-group">
+                    <label for="test-grupo">Tamanho do Grupo</label>
+                    <input type="number" id="test-grupo" required min="1">
+                </div>
+                <button type="submit" class="btn-primary">Adicionar à Fila</button>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        const filaListaEl = document.getElementById('fila-lista');
+        const testFormEl = document.getElementById('fila-test-form');
+
+        testFormEl.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const nome = document.getElementById('test-nome').value;
+            const grupo = parseInt(document.getElementById('test-grupo').value);
+            if (grupo > 8) {
+                alert("Grupos com mais de 8 pessoas devem fazer uma reserva.");
+                return;
+            }
+            try {
+                const response = await fetch('/fila/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nome_cliente: nome, tamanho_grupo: grupo })
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    alert(errorData.detail || "Erro ao adicionar cliente.");
+                    return;
+                }
+                testFormEl.reset();
+                await carregarFila();
+            } catch (error) {
+                console.error("Erro ao adicionar cliente de teste:", error);
+                alert("Não foi possível adicionar o cliente à fila.");
+            }
+        });
+
+        async function atenderProximo() {
+            try {
+                const response = await fetch('/fila/atender-proximo', { method: 'POST' });
+                const resultado = await response.json();
+                if (!response.ok) {
+                    alert(resultado.detail);
+                    return;
+                }
+                alert(resultado.detail);
+                await carregarFila();
+            } catch (error) {
+                console.error('Erro ao atender próximo:', error);
+                alert('Ocorreu um erro de rede.');
+            }
+        }
+        
+        async function mudarStatusCliente(filaId, novoStatus) {
+            if (novoStatus === 'cancelado') {
+                if (!confirm("Você tem certeza que deseja cancelar a vez deste cliente?")) return;
+            }
+            try {
+                const response = await fetch(`/fila/${filaId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: novoStatus })
+                });
+                if (!response.ok) throw new Error('Falha ao atualizar o status do cliente.');
+                await carregarFila();
+            } catch (error) {
+                console.error('Erro ao mudar status do cliente:', error);
+                alert('Não foi possível alterar o status do cliente.');
+            }
+        }
+
+        async function carregarFila() {
+            filaListaEl.innerHTML = '<p>Carregando fila...</p>';
+            try {
+                const response = await fetch('/fila/');
+                if (!response.ok) throw new Error('Erro de rede');
+                const fila = await response.json();
+                filaListaEl.innerHTML = '';
+                if (fila.length === 0) {
+                    filaListaEl.innerHTML = '<p>A fila de espera está vazia.</p>';
+                    return;
+                }
+                fila.forEach((cliente, index) => {
+                    const horaChegada = new Date(cliente.horario_chegada + 'Z');
+                    const agora = new Date();
+                    const tempoEspera = Math.round((agora - horaChegada) / (1000 * 60));
+                    const clienteItem = document.createElement('div');
+                    clienteItem.className = 'fila-item';
+                    clienteItem.innerHTML = `
+                        <div class="fila-info">
+                            <span class="posicao">#${index + 1}</span>
+                            <span class="nome">${cliente.nome_cliente}</span>
+                            <span class="grupo">(${cliente.tamanho_grupo} pessoas)</span>
+                        </div>
+                        <div class="fila-tempo">
+                            <span>Esperando há <strong>${tempoEspera} min</strong></span>
+                        </div>
+                        <div class="fila-actions">
+                            <button class="action-btn btn-deletar" onclick="mudarStatusCliente(${cliente.id}, 'cancelado')">Cancelar</button>
+                        </div>
+                    `;
+                    filaListaEl.appendChild(clienteItem);
+                });
+            } catch (error) {
+                filaListaEl.innerHTML = '<p style="color: red;">Não foi possível carregar a fila.</p>';
+            }
+        }
+
+        window.onload = carregarFila;
+        setInterval(carregarFila, 30000);
+    </script>
+</body>
+</html>

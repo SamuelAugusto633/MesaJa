@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MesaJa - Login</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <header class="global-header">
+        <div class="social-links">
+            <a href="#" title="Youtube"><img src="/static/icones/youtube.png" alt="YouTube"></a>
+            <a href="#" title="Facebook"><img src="/static/icones/facebook.png" alt="Facebook"></a>
+            <a href="#" title="Twitter"><img src="/static/icones/twitter.png" alt="Twitter"></a>
+            <a href="#" title="Instagram"><img src="/static/icones/instagram.png" alt="Instagram"></a>
+        </div>
+        <nav class="nav-links">
+            <a href="#">Conheça nossos recursos</a>
+            <a href="#">Versão de testes</a>
+            <a href="#">Nossas promoções e planos</a>
+            <a href="#">Tutorial</a>
+            <a href="#">Fale conosco</a>
+        </nav>
+    </header>
+
+    <main class="login-container">
+        <div class="login-box">
+            <h1>MesaJa</h1>
+            
+            <form action="/login" method="post">
+                <div class="input-group">
+                    <label for="email">E-mail</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="input-group">
+                    <label for="password">Senha</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                
+                <button type="submit">Logar</button>
+            </form>
+            
+            <a href="/forgot-password" class="forgot-password-link">esqueceu a senha?</a>
+
+            <div class="message-area" id="message-area">
+                {% if message %}
+                    <p>{{ message }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+
+</body>
+</html>

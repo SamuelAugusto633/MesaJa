@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MesaJa - Central de Interações</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <header class="global-header">
+        <div class="social-links">
+            <a href="#" title="Youtube"><img src="/static/icones/youtube.png" alt="YouTube"></a>
+            <a href="#" title="Facebook"><img src="/static/icones/facebook.png" alt="Facebook"></a>
+            <a href="#" title="Twitter"><img src="/static/icones/twitter.png" alt="Twitter"></a>
+            <a href="#" title="Instagram"><img src="/static/icones/instagram.png" alt="Instagram"></a>
+        </div>
+        <nav class="nav-links">
+            <a href="#">Recursos</a> <a href="#">Testes</a> <a href="#">Promoções</a> <a href="#">Tutorial</a> <a href="#">Fale Conosco</a>
+        </nav>
+    </header>
+
+    <main class="interacoes-container">
+        <div class="dashboard-header">
+            <h1>Central de Interações</h1>
+            <div class="notification-bar">
+                <p>Carregando notificações...</p>
+            </div>
+        </div>
+
+        <div class="interacoes-layout">
+            <aside class="interacoes-sidebar">
+                <h3>Histórico de Clientes Recentes</h3>
+                <div id="historico-lista" class="cliente-lista">
+                    <p>Carregando histórico...</p>
+                </div>
+            </aside>
+
+            <section class="interacoes-main">
+                <h3>Assuntos em Destaque (Nuvem de Palavras)</h3>
+                <div class="word-cloud-placeholder">
+                    <p>A nuvem de palavras com os principais tópicos das conversas com a IA aparecerá aqui.</p>
+                    <span>(Integração com Ollama pendente)</span>
+                </div>
+
+                <h3>Visão Geral</h3>
+                <div class="metricas-grid">
+                    <div class="metrica-card">
+                        <h4>Clientes na Fila</h4>
+                        <p id="metric-clientes-fila">...</p>
+                    </div>
+                    <div class="metrica-card">
+                        <h4>Desistências Hoje</h4>
+                        <p id="metric-desistencias">...</p>
+                    </div>
+                    <div class="metrica-card">
+                        <h4>Numero de Promoções</h4>
+                        <p id="metric-promocoes">...</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+    
+    <script>
+        // --- Variáveis Globais ---
+        const historicoListaEl = document.getElementById('historico-lista');
+        const metricClientesFilaEl = document.getElementById('metric-clientes-fila');
+        const metricDesistenciasEl = document.getElementById('metric-desistencias');
+        const metricPromocoesEl = document.getElementById('metric-promocoes');
+        const notificationBar = document.querySelector('.notification-bar');
+
+        // --- Funções de Carregamento de Dados ---
+        async function carregarHistorico() {
+            try {
+                const response = await fetch('/historico-completo');
+                if (!response.ok) throw new Error("Erro ao buscar histórico.");
+                const historico = await response.json();
+
+                historicoListaEl.innerHTML = ''; // Limpa a mensagem de "carregando"
+                if (historico.length === 0) {
+                    historicoListaEl.innerHTML = '<p>Nenhum cliente no histórico ainda.</p>';
+                    return;
+                }
+
+                historico.forEach(cliente => {
+                    const item = document.createElement('div');
+                    item.className = 'cliente-item';
+                    item.innerHTML = `
+                        <strong>${cliente.nome_cliente}</strong>
+                        <span>Status: ${cliente.status}</span>
+                    `;
+                    historicoListaEl.appendChild(item);
+                });
+            } catch (error) {
+                console.error("Erro:", error);
+                historicoListaEl.innerHTML = '<p style="color: red;">Falha ao carregar histórico.</p>';
+            }
+        }
+
+      
+
+        async function carregarMetricas() {
+            try {
+                const response = await fetch('/metricas');
+                if (!response.ok) throw new Error("Erro ao buscar métricas.");
+                const metricas = await response.json();
+
+                metricClientesFilaEl.textContent = metricas.clientes_na_fila;
+                metricDesistenciasEl.textContent = metricas.desistencias_hoje;
+                // --- ALTERAÇÃO AQUI ---
+                // Usamos a nova chave 'numero_promocoes' que vem da API
+                metricPromocoesEl.textContent = metricas.numero_promocoes;
+
+            } catch (error) {
+                console.error("Erro:", error);
+                metricClientesFilaEl.textContent = 'Erro';
+            }
+        }
+
+
+
+        // --- Lógica das Notificações ---
+        async function atualizarNotificacoes() {
+            try {
+                const response = await fetch('/notificacoes/');
+                if (!response.ok) return;
+                const notificacoes = await response.json();
+
+                if (notificacoes.length > 0) {
+                    const textoNotificacoes = notificacoes.join(' ••• ');
+                    const ticker = document.getElementById('notification-ticker');
+                    if (!ticker || ticker.innerText !== textoNotificacoes) {
+                         notificationBar.innerHTML = `<p id="notification-ticker">${textoNotificacoes}</p>`;
+                    }
+                } else {
+                    notificationBar.innerHTML = '<p>Nenhuma notificação recente.</p>';
+                }
+            } catch (error) {
+                console.error("Erro ao buscar notificações:", error);
+            }
+        }
+
+        // --- Inicialização de TUDO ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Carrega os dados da página
+            carregarHistorico();
+            carregarMetricas();
+            
+            // Inicia o loop das notificações
+            atualizarNotificacoes();
+            setInterval(atualizarNotificacoes, 2000);
+
+            // Bônus: atualiza as métricas a cada 10 segundos para parecer mais "vivo"
+            setInterval(carregarMetricas, 10000);
+        });
+    </script>
+</body>
+</html>
