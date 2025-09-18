@@ -31,11 +31,17 @@ import os
 # Importa o nosso arquivo de rotas
 import routes
 
-# --- ALTERAÇÃO AQUI ---
-# Descobre o caminho absoluto para a pasta 'back' (onde este ficheiro está)
+
+# Descobre o caminho absoluto para a pasta 'back' 
 # e depois para a pasta 'front'
 current_dir = os.path.dirname(os.path.abspath(__file__))
 front_dir = os.path.join(current_dir, "..", "front")
+
+
+
+
+
+
 
 # Cria a aplicação principal
 app = FastAPI(
