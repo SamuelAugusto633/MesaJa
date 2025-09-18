@@ -105,9 +105,31 @@ async def atribuir_cliente_mesa(mesa_id: int, db: Session = Depends(get_db)):
     return mesa_atualizada
 
 # --- Rotas da API da Fila ---
-@router.post("/fila/", response_model=schemas.FilaOut, tags=["Fila"])
+#@router.post("/fila/", response_model=schemas.FilaOut, tags=["Fila"])
+#async def entrar_na_fila(cliente: schemas.FilaCreate, db: Session = Depends(get_db)):
+ #   return await crud.adicionar_cliente_fila(db=db, cliente=cliente)
+
+
+
+
+
+@router.get("/mesas/{mesa_id}", response_model=schemas.MesaOut, tags=["Mesas"])
+def obter_mesa_por_id(mesa_id: int, db: Session = Depends(get_db)):
+    """Endpoint para buscar uma única mesa pelo seu ID."""
+    mesa = crud.buscar_mesa_por_id(db, mesa_id=mesa_id)
+    if not mesa:
+        raise HTTPException(status_code=404, detail="Mesa não encontrada")
+    return mesa
+
+
+
+# retorna 201 auto
+
+@router.post("/fila/", response_model=schemas.FilaOut, tags=["Fila"], status_code=201)
 async def entrar_na_fila(cliente: schemas.FilaCreate, db: Session = Depends(get_db)):
     return await crud.adicionar_cliente_fila(db=db, cliente=cliente)
+
+
 
 @router.get("/fila/", response_model=List[schemas.FilaOut], tags=["Fila"])
 def obter_fila_espera(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):

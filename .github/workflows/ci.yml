@@ -1,0 +1,44 @@
+name: Testes do Back-end Python
+
+# Aciona o workflow em pushes ou pull requests para a branch 'main'
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest # Corre numa máquina virtual Ubuntu
+
+    steps:
+    # Passo 1: Faz o checkout do seu código do repositório
+    - name: Checkout do código
+      uses: actions/checkout@v4
+
+    # Passo 2: Configura o ambiente Python
+    - name: Configurar Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    # Passo 3: Instala as dependências do projeto
+    - name: Instalar dependências
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r back/requirements.txt
+
+    # Passo 4: Executa os testes com pytest
+    - name: Executar os testes
+      run: |
+        # Adiciona a pasta raiz ao PYTHONPATH para resolver as importações
+        export PYTHONPATH=$(pwd)
+        pytest back/tests
+      env:
+        # Os secrets são passados como variáveis de ambiente,
+        # mas os nossos testes usam um banco de dados em memória,
+        # então eles não são estritamente necessários para os testes atuais,
+        # mas é uma boa prática mantê-los aqui para o futuro.
+        DB_USER: ${{ secrets.DB_USER }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        # ... e assim por diante para as outras variáveis, se necessário
