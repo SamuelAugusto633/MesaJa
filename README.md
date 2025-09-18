@@ -1,6 +1,21 @@
 🍽️ MesaJa - Sistema de Gerenciamento de Restaurante
 
+
 Sistema de gerenciamento de mesas para restaurantes, composto por um Painel Web para administradores e um Bot do Telegram para interação com a equipa.
+
+🏗️ Estrutura do Projeto
+
+
+Este repositório contém todo o código do back-end (API, lógica do servidor, interação com o banco de dados e testes).
+
+O código do front-end (a interface visual construída para interagir com esta API) encontra-se num repositório separado. Para obter a aplicação completa, é necessário ter os dois projetos.
+
+Clone o repositório do front-end com o seguinte comando:
+
+git clone [https://github.com/SamuelAugusto633/MesaJa_Front.git](https://github.com/SamuelAugusto633/MesaJa_Front.git)
+
+Certifique-se de que a pasta front do repositório está presente na raiz do projeto MesaJa, fora da pasta back.
+
 🚀 Tutorial Completo de Instalação e Execução
 
 Siga os passos abaixo para configurar e rodar o projeto localmente.
