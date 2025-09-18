@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from typing import List
 from datetime import date
 
-# Importa os nossos módulos
+# Importa 
 import crud
 import schemas
 import models
@@ -183,7 +183,7 @@ async def remover_garcon(garcon_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Garçom não encontrado")
     return garcon_deletado
 
-# Em back/routes.py, substitua a função enviar_mensagem_para_garcon
+
 
 from telegram_sender import enviar_mensagem_privada, enviar_mensagem_para_grupo # Adicione o novo import
 

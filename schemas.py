@@ -1,15 +1,14 @@
-# back/schemas.py
+
 
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
 
-# Em back/schemas.py
 
 class MesaBase(BaseModel):
     numero: int
     capacidade: int
     status: Optional[str] = "disponivel"
-    cliente_atual: Optional[str] = None # <-- ADICIONE ESTA LINHA
+    cliente_atual: Optional[str] = None 
 
 # Schema para criar uma nova mesa (o que a API recebe)
 class MesaCreate(MesaBase):

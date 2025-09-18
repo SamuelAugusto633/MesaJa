@@ -22,12 +22,12 @@ jobs:
     - name: 3. Instalar as dependências
       run: |
         python -m pip install --upgrade pip
-        # CORREÇÃO AQUI: Removemos 'back/' do caminho
+        
         pip install -r requirements.txt
     
     - name: 4. Executar os testes
       run: |
-        # O pytest executa a partir da raiz (a pasta 'back') e encontrará a pasta 'tests'
+        # O pytest executa a partir da raiz (pasta 'back') e encontra a pasta 'tests'
         pytest -v
       env:
         DB_USER: ${{ secrets.DB_USER }}

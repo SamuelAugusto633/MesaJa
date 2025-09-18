@@ -3,7 +3,7 @@
 #from fastapi import FastAPI
 #from fastapi.staticfiles import StaticFiles
 
-# Importa o nosso novo arquivo de rotas
+
 #import routes
 
 # Cria a aplicação principal
@@ -22,13 +22,12 @@
 
 
 
-# back/main_app.py
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 import os
 
-# Importa o nosso arquivo de rotas
+
 import routes
 
 

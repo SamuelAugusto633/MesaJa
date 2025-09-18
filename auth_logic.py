@@ -1,8 +1,6 @@
-# back/auth_logic.py
 
-# --- DADOS HARDCODED ---
-# Em uma aplicação real, isso viria de um banco de dados.
-# Para o nosso projeto, os dados do administrador são definidos aqui.
+
+
 
 ADMIN_EMAIL = "admin@mesaja.com"
 ADMIN_PASSWORD = "123"

@@ -1,7 +1,7 @@
 # back/init_db.py
 
 from database_config import Base, engine
-from models import Mesa, Fila, Garcon, Promocao, Mensagem # Importamos o novo modelo Mensagem
+from models import Mesa, Fila, Garcon, Promocao, Mensagem 
 
 def create_tables():
     """

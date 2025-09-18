@@ -1,4 +1,4 @@
-# back/telegram_sender.py
+
 
 import os
 import telegram
