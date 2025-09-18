@@ -52,7 +52,8 @@ app = FastAPI(
 
 # Monta um caminho para servir arquivos estáticos usando o caminho absoluto
 # Esta linha agora é robusta e funcionará tanto com o uvicorn como com o pytest
-app.mount("/static", StaticFiles(directory=front_dir), name="static")
+if os.path.isdir(front_dir):
+    app.mount("/static", StaticFiles(directory=front_dir), name="static")
 
 # Inclui todas as rotas definidas no arquivo routes.py
 app.include_router(routes.router)
