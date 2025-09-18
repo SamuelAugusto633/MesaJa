@@ -27,7 +27,7 @@ jobs:
     
     - name: 4. Executar os testes
       run: |
-        # O pytest correrá a partir da raiz (a pasta 'back') e encontrará a pasta 'tests'
+        # O pytest executa a partir da raiz (a pasta 'back') e encontrará a pasta 'tests'
         pytest -v
       env:
         DB_USER: ${{ secrets.DB_USER }}
