@@ -69,6 +69,9 @@ async def atribuir_proximo_cliente(db: Session, mesa_id: int):
         db.commit()
         db.refresh(mesa)
         add_notification(f"Cliente '{cliente_fila.nome_cliente}' foi alocado à Mesa {mesa.numero}.")
+        mensagem_para_grupo = f"Cliente '{cliente_fila.nome_cliente}' foi atendido na Mesa {mesa.numero}."
+        await enviar_mensagem_para_grupo(mensagem_para_grupo)
+        
         return mesa
     
     return None
@@ -145,6 +148,9 @@ async def atender_proximo_da_fila(db: Session):
         db.commit()
         
         add_notification(f"Cliente '{cliente_fila.nome_cliente}' atendido na(s) Mesa(s) {numeros_mesas_str}.")
+        mensagem_para_grupo = f"Cliente '{cliente_fila.nome_cliente}' foi atendido na(s) Mesa(s) {numeros_mesas_str}."
+        await enviar_mensagem_para_grupo(mensagem_para_grupo)
+
         return {"sucesso": True, "cliente": cliente_fila, "mesas": mesas_alocadas}
 
     return {"sucesso": False, "mensagem": "Não há mesas ou combinação de mesas disponíveis que comportem o grupo."}
