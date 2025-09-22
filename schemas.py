@@ -1,4 +1,4 @@
-
+#schemas do Pydantic que definem a estrutura dos dados que a API recebe e envia
 
 from pydantic import BaseModel, ConfigDict
 from typing import Optional

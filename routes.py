@@ -123,7 +123,12 @@ def obter_mesa_por_id(mesa_id: int, db: Session = Depends(get_db)):
 
 
 
-# retorna 201 auto
+# retorna 201 auto indica que a criação foi bem-sucedida (“Created”).
+
+#Sempre que alguém (bot do Telegram, aplicativo web ou outro cliente) quiser colocar um grupo 
+# na fila de espera, ele envia os dados para esse endpoint, que grava no banco e retorna 
+# a confirmação.
+#
 
 @router.post("/fila/", response_model=schemas.FilaOut, tags=["Fila"], status_code=201)
 async def entrar_na_fila(cliente: schemas.FilaCreate, db: Session = Depends(get_db)):

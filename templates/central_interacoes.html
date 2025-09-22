@@ -107,7 +107,7 @@
 
                 metricClientesFilaEl.textContent = metricas.clientes_na_fila;
                 metricDesistenciasEl.textContent = metricas.desistencias_hoje;
-                // --- ALTERAÇÃO AQUI ---
+                
                 // Usamos a nova chave 'numero_promocoes' que vem da API
                 metricPromocoesEl.textContent = metricas.numero_promocoes;
 
@@ -150,7 +150,7 @@
             atualizarNotificacoes();
             setInterval(atualizarNotificacoes, 2000);
 
-            // Bônus: atualiza as métricas a cada 10 segundos para parecer mais "vivo"
+            // atualiza as métricas a cada 10 segundos
             setInterval(carregarMetricas, 10000);
         });
     </script>
