@@ -10,7 +10,7 @@ import schemas
 from notification_manager import add_notification
 from telegram_sender import enviar_mensagem_para_grupo, enviar_mensagem_privada
 
-# --- Funções CRUD para a Mesa ---
+# --- Funções CRUD para a Mesa ----
 
 async def criar_mesa(db: Session, mesa: schemas.MesaCreate):
     """Cria uma nova entrada de mesa no banco de dados."""
